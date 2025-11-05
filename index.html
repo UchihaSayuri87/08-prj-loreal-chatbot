@@ -25,8 +25,7 @@
           role="banner"
           aria-label="L'Oréal Smart Product Advisor"
         >
-          <!-- raster logo: do not set src immediately to avoid automatic 404 requests.
-               Place your file at /workspaces/08-prj-loreal-chatbot/img/logo.png -->
+          <!-- don't set src to avoid automatic 404 requests; loader will set src when available -->
           <img
             id="siteLogo"
             data-src="img/logo.png"
@@ -134,7 +133,7 @@
 
         async function exists(url) {
           try {
-            // HEAD is faster; fall back to GET if server disallows HEAD
+            // Try HEAD first to avoid downloading the full file; fall back to GET if needed
             let r = await fetch(url, { method: "HEAD" });
             if (r && r.ok) return true;
             r = await fetch(url, { method: "GET" });
