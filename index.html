@@ -25,46 +25,16 @@
           role="banner"
           aria-label="L'Oréal Smart Product Advisor"
         >
-          <!-- Embedded inline SVG logo (current). To use your official raster logo instead,
-               place the file at /workspaces/08-prj-loreal-chatbot/img/logo.png and
-               replace the SVG below with the commented <img> tag. The comment shows the exact path. -->
-          <svg
+          <!-- Embedded raster logo (data URI) — no external requests -->
+          <!-- Replace the data URI below with your official raster logo's base64 data when ready -->
+          <img
             id="siteLogo"
             class="site-logo"
             role="img"
-            aria-labelledby="logoTitle logoDesc"
-            viewBox="0 0 300 80"
-            xmlns="http://www.w3.org/2000/svg"
-            focusable="false"
-          >
-            <title id="logoTitle">L'Oréal</title>
-            <desc id="logoDesc">L'Oréal Smart Product Advisor logo</desc>
-            <rect width="100%" height="100%" fill="none" />
-            <text
-              x="50%"
-              y="55%"
-              text-anchor="middle"
-              font-family="Playfair Display, Montserrat, Arial, Helvetica, sans-serif"
-              font-size="28"
-              font-weight="700"
-              fill="#0a0a0a"
-            >
-              L’ORÉAL
-            </text>
-            <rect x="30" y="68" width="240" height="4" fill="#b78f46" rx="2" />
-          </svg>
-
-          <!-- Example: to use a raster logo, uncomment the <img> below and remove the SVG above.
-               Make sure the file exists at img/logo.png to avoid 404s. -->
-          <!--
-          <img
-            id="siteLogo"
-            src="img/logo.png"
+            aria-label="L'Oréal logo"
+            src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAAAyCAYAAAB0Cw6/AAAAF0lEQVR4nO3BMQEAAADCoPVPbQ0PoAAAAAAAAAC8GkYAAQF2QX4AAAAASUVORK5CYII="
             alt="L'Oréal logo"
-            class="site-logo"
-            onerror="this.style.display='none'; this.closest('.site-hero').classList.add('no-logo');"
           />
-          -->
 
           <div class="site-headline">
             <h1 class="site-title">Smart Product Advisor</h1>
