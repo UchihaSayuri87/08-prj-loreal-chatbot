@@ -105,4 +105,20 @@ Notes:
 4. Confirm the assistant reply appears and `localStorage` contains the conversation history.
 5. Use the toolbar to Clear or Reset Context to test persistence.
 
+## Local API key (secrets.js) — local testing only
+
+If you want to test the frontend directly (not using the Cloudflare Worker), create a file named `secrets.js` at the project root with your OpenAI API key:
+
+1. Create `/workspaces/08-prj-loreal-chatbot/secrets.js`.
+2. Add the key (local testing only):
+
+   ```javascript
+   // local secrets.js (DO NOT COMMIT)
+   const OPENAI_API_KEY = "sk-REPLACE_WITH_YOUR_KEY";
+   window.OPENAI_API_KEY = OPENAI_API_KEY;
+   ```
+
+3. Reload the page. The frontend will use `window.OPENAI_API_KEY` to call OpenAI directly.
+4. Important: never commit `secrets.js` to git. It's already listed in `.gitignore`. For production use the Cloudflare Worker and store the key in the Worker dashboard as `OPENAI_API_KEY`, then remove `secrets.js` (and the <script> include in `index.html`).
+
 Enjoy building your L’Oréal beauty assistant! 💄

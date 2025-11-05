@@ -100,6 +100,11 @@
       </footer>
     </div>
 
+    <!-- For local testing only: include secrets.js (contains window.OPENAI_API_KEY).
+         DO NOT commit a real key — this file is listed in .gitignore.
+         Remove this script tag when deploying to production or when using the Cloudflare Worker. -->
+    <script src="secrets.js"></script>
+
     <!-- main UI/worker script -->
     <script src="script.js"></script>
   </body>
