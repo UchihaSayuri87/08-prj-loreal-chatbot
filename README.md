@@ -11,16 +11,45 @@ L’Oréal is exploring the power of AI, and your job is to showcase what's poss
 
 When deploying through Cloudflare, make sure your API request body (in `script.js`) includes a `messages` array and handle the response by extracting `data.choices[0].message.content`.
 
-## ☁️ Cloudflare Worker (production)
+## Deploy & configure Cloudflare Worker (required for production)
 
-Deploy the provided `RESOURCE_cloudflare-worker.js` as a Cloudflare Worker and set the worker's secret named `OPENAI_API_KEY` in the Workers dashboard.
+1. Deploy the worker:
 
-After deployment:
+   - Copy `RESOURCE_cloudflare-worker.js` into a new Cloudflare Worker in your account.
+   - In the Workers dashboard, create the worker and deploy it.
 
-- Note the worker URL (for example: https://your-worker.your-domain.workers.dev).
-- Open `script.js` and set: WORKER_URL = "https://your-worker.your-domain.workers.dev"
-- Remove any local `secrets.js` includes from `index.html` so the API key is not exposed to the browser.
+2. Store your OpenAI API key securely in Cloudflare:
 
-For local classroom testing only, you may use a local secrets.js, but never commit real keys to a public repo.
+   - In the Worker settings → Variables and Secrets, add a secret named `OPENAI_API_KEY`.
+   - Paste your OpenAI key as the value (do NOT commit this key to your repo).
+
+3. Note the worker URL:
+
+   - After deployment Cloudflare provides a URL for your worker (for example: https://your-worker.your-domain.workers.dev).
+
+4. Update the frontend:
+
+   - Open `script.js` and set:
+     const WORKER_URL = "https://your-worker.your-domain.workers.dev"
+   - Save and reload the page.
+
+5. Remove any client-side keys:
+
+   - Ensure `secrets.js` is not included in `index.html` and do not commit any real keys.
+   - If you used a local `secrets.js` for testing, remove it from git and your commits:
+     ```bash
+     git rm --cached secrets.js
+     git commit -m "Remove local secrets.js"
+     ```
+
+6. Test:
+   - In the web UI ask a L’Oréal product/routine question.
+   - The frontend sends a POST with `{ messages: [...] }` to your worker.
+   - The worker forwards the request to OpenAI using the secret and returns the assistant response.
+
+Notes:
+
+- Never expose your OpenAI API key in client-side code for production.
+- The worker must be deployed and the `OPENAI_API_KEY` secret configured for the chat to work from browsers.
 
 Enjoy building your L’Oréal beauty assistant! 💄

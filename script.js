@@ -55,6 +55,19 @@ chatForm.addEventListener("submit", async (e) => {
       { role: "user", content: text },
     ];
 
+    // If WORKER_URL not configured, show friendly UI message and abort request
+    if (WORKER_URL.includes("your-cloudflare-worker")) {
+      // remove typing indicator and notify user in the chat window
+      typingEl.remove();
+      appendMessage(
+        "ai",
+        "Configuration required: deploy the provided Cloudflare Worker, set OPENAI_API_KEY in the Worker dashboard, then update WORKER_URL in script.js to your worker URL."
+      );
+      userInput.disabled = false;
+      userInput.focus();
+      return;
+    }
+
     // Send the messages array to your Cloudflare Worker.
     // The worker will forward the request to OpenAI using the secret stored in Cloudflare.
     const response = await fetch(WORKER_URL, {

@@ -39,34 +39,111 @@ body {
   height: auto;
 }
 
-/* chat window */
-.chatbox {
-  margin: 40px 0;
+/* brand palette & helpers */
+:root {
+  --accent-gold: #c8a165; /* warm gold accent */
+  --accent-dark: #0a0a0a; /* deep black for headings/buttons */
+  --muted: #6b6b6b;
+  --bg: #faf7f5;
 }
 
+/* hero/header styling inspired by brand visuals */
+.site-hero {
+  background: linear-gradient(
+    180deg,
+    rgba(200, 161, 101, 0.07),
+    rgba(250, 247, 245, 0.4)
+  );
+  border-radius: 10px;
+  padding: 18px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  justify-content: center;
+  box-shadow: 0 6px 18px rgba(10, 10, 10, 0.04);
+  margin-bottom: 8px;
+}
+
+/* group the text next to the logo */
+.site-headline {
+  text-align: center;
+}
+
+.site-title {
+  color: var(--accent-dark);
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+/* small descriptive tagline */
+.site-tagline {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  font-style: italic;
+}
+
+/* logo tweaks for polish */
+.site-logo {
+  display: block;
+  margin: 0;
+  width: 110px;
+  height: auto;
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(10, 10, 10, 0.06);
+  background: #fff;
+  padding: 6px;
+}
+
+/* chat window: softer, more modern card */
 .chat-window {
   height: 360px;
-  border: 1px solid #000;
-  padding: 20px;
+  border: none;
+  padding: 18px;
   font-size: 18px;
   line-height: 1.5;
   overflow-y: auto;
-  background: #fafafa;
+  background: linear-gradient(180deg, #ffffff, #fbf8f6);
   white-space: pre-line;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(10, 10, 10, 0.06);
+  border: 1px solid rgba(10, 10, 10, 0.06);
 }
 
 /* messages */
 .msg {
   margin-bottom: 14px;
   line-height: 1.5;
+  max-width: 85%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  display: inline-block;
 }
 
+/* user (right) */
 .msg.user {
-  color: #000;
+  background: var(--accent-dark);
+  color: #fff;
+  align-self: flex-end;
+  float: right;
+  border-bottom-right-radius: 4px;
 }
 
+/* ai (left) */
 .msg.ai {
-  color: #666666;
+  background: #fff;
+  color: #333;
+  border: 1px solid rgba(10, 10, 10, 0.06);
+  float: left;
+  border-bottom-left-radius: 4px;
+}
+
+/* clear floats after message list so layout stays stable */
+.chat-window::after {
+  content: "";
+  display: block;
+  clear: both;
 }
 
 /* input row */
@@ -88,19 +165,21 @@ body {
   outline-offset: 2px;
 }
 
+/* input row: gold accent button for flair */
 .chat-form button {
   font-size: 18px;
-  background: #000;
-  color: #fff;
+  background: var(--accent-gold);
+  color: var(--accent-dark);
   border: none;
   padding: 12px;
-  width: 48px;
+  width: 56px;
   height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: filter 0.18s;
+  border-radius: 8px;
 }
 
 .chat-form button .material-icons {
@@ -108,11 +187,11 @@ body {
 }
 
 .chat-form button:hover {
-  background: #666666;
+  filter: brightness(0.95);
 }
 
 .chat-form button:focus {
-  outline: 2px solid #000;
+  outline: 2px solid rgba(200, 161, 101, 0.25);
   outline-offset: 2px;
 }
 
@@ -149,4 +228,17 @@ body {
 
 .site-footer a:hover {
   color: #666666;
+}
+
+/* smaller screens tweaks */
+@media (max-width: 520px) {
+  .site-logo {
+    width: 88px;
+  }
+  .site-title {
+    font-size: 18px;
+  }
+  .chat-window {
+    height: 300px;
+  }
 }
