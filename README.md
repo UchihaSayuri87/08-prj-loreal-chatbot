@@ -121,4 +121,30 @@ If you want to test the frontend directly (not using the Cloudflare Worker), cre
 3. Reload the page. The frontend will use `window.OPENAI_API_KEY` to call OpenAI directly.
 4. Important: never commit `secrets.js` to git. It's already listed in `.gitignore`. For production use the Cloudflare Worker and store the key in the Worker dashboard as `OPENAI_API_KEY`, then remove `secrets.js` (and the <script> include in `index.html`).
 
+## Prepare for production — protect your API key
+
+1. Do NOT load client-side secrets in production. Remove any <script src="secrets.js"></script> from `index.html`.
+
+2. If you previously created a local `secrets.js` for testing, remove it from the repo and your commits:
+
+```bash
+# stop tracking and remove from the next commit
+git rm --cached secrets.js
+git commit -m "Remove local secrets.js"
+
+# (Optional) To purge from git history (use with caution — rewrites history)
+# Use BFG or git filter-branch if needed.
+```
+
+3. Use the Cloudflare Worker (provided `RESOURCE_cloudflare-worker.js`) for production:
+
+   - Deploy the worker.
+   - In the Workers dashboard → Variables & Secrets add: name = OPENAI_API_KEY, value = <your key>.
+   - Update `script.js`: set `WORKER_URL = "https://your-worker.your-domain.workers.dev"` and do NOT include `secrets.js` in `index.html`.
+
+4. Verify in production:
+   - The frontend should POST { messages: [...] } to your worker URL.
+   - The worker forwards to OpenAI using the secret and returns the assistant response.
+   - No API keys are present in client-side code or the repo.
+
 Enjoy building your L’Oréal beauty assistant! 💄

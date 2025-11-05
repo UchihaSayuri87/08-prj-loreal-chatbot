@@ -25,14 +25,13 @@
           role="banner"
           aria-label="L'Oréal Smart Product Advisor"
         >
-          <!-- Embedded raster logo (data URI) — no external requests -->
-          <!-- Replace the data URI below with your official raster logo's base64 data when ready -->
+          <!-- Official raster logo (saved at img/logo.png) -->
           <img
             id="siteLogo"
             class="site-logo"
             role="img"
             aria-label="L'Oréal logo"
-            src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAAAyCAYAAAB0Cw6/AAAAF0lEQVR4nO3BMQEAAADCoPVPbQ0PoAAAAAAAAAC8GkYAAQF2QX4AAAAASUVORK5CYII="
+            src="img/logo.png"
             alt="L'Oréal logo"
           />
 
@@ -41,6 +40,7 @@
             <p class="site-tagline">
               Personalized L’Oréal product recommendations & routines
             </p>
+
             <div class="logo-fallback" aria-hidden="true">L’Oréal</div>
           </div>
         </div>
@@ -100,10 +100,70 @@
       </footer>
     </div>
 
-    <!-- For local testing only: include secrets.js (contains window.OPENAI_API_KEY).
-         DO NOT commit a real key — this file is listed in .gitignore.
-         Remove this script tag when deploying to production or when using the Cloudflare Worker. -->
-    <script src="secrets.js"></script>
+    <!-- Logo loader script: sets src only when file exists to avoid 404s -->
+    <script>
+      // filepath: /workspaces/08-prj-loreal-chatbot/index.html
+      (function () {
+        const logo = document.getElementById("siteLogo");
+        const hero = document.querySelector(".site-hero");
+        const fallbackEl = document.querySelector(".logo-fallback");
+        if (!logo) return;
+
+        function showFallback() {
+          if (hero) hero.classList.add("no-logo");
+          if (fallbackEl) fallbackEl.style.display = "block";
+          if (logo) logo.style.display = "none";
+        }
+
+        async function exists(url) {
+          try {
+            // Try HEAD first to avoid downloading the full file; fall back to GET if needed
+            let r = await fetch(url, { method: "HEAD" });
+            if (r && r.ok) return true;
+            r = await fetch(url, { method: "GET" });
+            return r && r.ok;
+          } catch (err) {
+            return false;
+          }
+        }
+
+        (async function tryPaths() {
+          const primary = logo.dataset.src;
+          const alt = logo.dataset.altSrc;
+          const fallback = logo.dataset.fallback;
+
+          if (primary && (await exists(primary))) {
+            logo.src = primary;
+            logo.style.display = "";
+            if (hero) hero.classList.remove("no-logo");
+            if (fallbackEl) fallbackEl.style.display = "none";
+            return;
+          }
+
+          if (alt && (await exists(alt))) {
+            logo.src = alt;
+            logo.style.display = "";
+            if (hero) hero.classList.remove("no-logo");
+            if (fallbackEl) fallbackEl.style.display = "none";
+            return;
+          }
+
+          // use embedded fallback if provided
+          if (fallback) {
+            logo.src = fallback;
+            logo.style.display = "";
+            if (hero) hero.classList.remove("no-logo");
+            if (fallbackEl) fallbackEl.style.display = "none";
+            return;
+          }
+
+          showFallback();
+        })();
+      })();
+    </script>
+
+    <!-- secrets.js is intentionally NOT included in production to avoid exposing API keys.
+         For local testing only, create secrets.js (not committed) and include it here during development. -->
 
     <!-- main UI/worker script -->
     <script src="script.js"></script>
