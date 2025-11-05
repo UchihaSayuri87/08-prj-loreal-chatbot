@@ -52,13 +52,57 @@ Notes:
 - Never expose your OpenAI API key in client-side code for production.
 - The worker must be deployed and the `OPENAI_API_KEY` secret configured for the chat to work from browsers.
 
-Notes on local testing controls
+## Quick checklist — Verify each item
 
-- A small toolbar in the UI provides:
-  - Clear: clears the visible conversation (keeps greeting).
-  - Reset Context: deletes stored history and your saved name.
-- Keyboard shortcut: Ctrl/Cmd+K focuses the input box.
-- We limit outbound history to the last 20 messages to keep requests reasonable.
-- Remember: never commit real API keys. Use the Cloudflare Worker and its OPENAI_API_KEY secret in production.
+- Branding & logo
+
+  - Place the official raster logo at: /workspaces/08-prj-loreal-chatbot/img/logo.png
+  - OR keep the inline SVG (already embedded). If you switch to the raster logo, uncomment the <img> example in `index.html` and remove the SVG to avoid duplicate logos.
+  - Confirm no 404s appear for `/img/logo.png` or `/logo.png` in DevTools.
+
+- Fonts & styling
+
+  - Headings use the Playfair Display family and UI uses Montserrat (see `index.html` and `style.css`).
+  - Colors follow a L’Oréal-like palette (deep black + warm gold) in `style.css`.
+
+- System prompt & AI relevance
+
+  - `script.js` includes a system prompt limiting responses to L’Oréal products, routines, and recommendations (see `BASE_SYSTEM_PROMPT`).
+  - The assistant will politely refuse out-of-scope questions per the prompt.
+
+- Local testing secrets (ONLY for private/local testing)
+
+  - If you need a local key for tests, temporarily add it to `secrets.js` (it's in `.gitignore` so don't commit).
+  - For production, DO NOT store keys client-side.
+
+- Cloudflare Worker (production secure flow) — required for deployment
+
+  1. Copy `RESOURCE_cloudflare-worker.js` into a new Cloudflare Worker.
+  2. In the Workers dashboard, add a secret named `OPENAI_API_KEY` (Variables & Secrets).
+  3. Deploy the worker and note the worker URL (e.g. `https://your-worker.your-domain.workers.dev`).
+  4. Update `script.js` and set:
+     - `const WORKER_URL = "https://your-worker.your-domain.workers.dev";`
+  5. Remove any client-side `secrets.js` usage from `index.html`.
+
+- Frontend behavior (already implemented in `script.js`)
+
+  - Messages are sent as a `messages` array to the worker.
+  - Responses are read from `data.choices[0].message.content`.
+  - Conversation history is stored in `localStorage` to support multi-turn context.
+  - The Latest Question is displayed above each assistant reply (resets each question).
+  - UI uses distinct message bubbles for user vs assistant (see `style.css`).
+
+- Debugging & network errors
+  - If you see `Failed to load resource: 404` for logos, ensure the raster logo exists at the path above or keep the inline SVG.
+  - If you see `Failed to fetch` or `ERR_NAME_NOT_RESOLVED` for the worker URL, confirm the worker is deployed and WORKER_URL is set correctly in `script.js`.
+  - Use the developer console to inspect network errors and CORS issues.
+
+## Verifying the full flow locally (recommended)
+
+1. Start a local preview of `index.html` (Codespaces live preview).
+2. Ensure the config banner shows guidance if WORKER_URL is not set or unreachable.
+3. Set WORKER_URL to your worker and test a question about L’Oréal products.
+4. Confirm the assistant reply appears and `localStorage` contains the conversation history.
+5. Use the toolbar to Clear or Reset Context to test persistence.
 
 Enjoy building your L’Oréal beauty assistant! 💄

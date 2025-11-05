@@ -25,7 +25,9 @@
           role="banner"
           aria-label="L'Oréal Smart Product Advisor"
         >
-          <!-- Embedded inline SVG logo to avoid external 404 requests -->
+          <!-- Embedded inline SVG logo (current). To use your official raster logo instead,
+               place the file at /workspaces/08-prj-loreal-chatbot/img/logo.png and
+               replace the SVG below with the commented <img> tag. The comment shows the exact path. -->
           <svg
             id="siteLogo"
             class="site-logo"
@@ -51,6 +53,19 @@
             </text>
             <rect x="30" y="68" width="240" height="4" fill="#b78f46" rx="2" />
           </svg>
+
+          <!-- Example: to use a raster logo, uncomment the <img> below and remove the SVG above.
+               Make sure the file exists at img/logo.png to avoid 404s. -->
+          <!--
+          <img
+            id="siteLogo"
+            src="img/logo.png"
+            alt="L'Oréal logo"
+            class="site-logo"
+            onerror="this.style.display='none'; this.closest('.site-hero').classList.add('no-logo');"
+          />
+          -->
+
           <div class="site-headline">
             <h1 class="site-title">Smart Product Advisor</h1>
             <p class="site-tagline">
