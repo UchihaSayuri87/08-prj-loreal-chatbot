@@ -25,14 +25,16 @@
           role="banner"
           aria-label="L'Oréal Smart Product Advisor"
         >
-          <!-- Official raster logo (saved at img/logo.png) -->
+          <!-- Official raster logo (place the file at /workspaces/08-prj-loreal-chatbot/img/loreal-logo.png) -->
           <img
             id="siteLogo"
             class="site-logo"
             role="img"
             aria-label="L'Oréal logo"
-            src="DATA_URI_HERE"
+            src="img/loreal-logo.png"
             alt="L'Oréal logo"
+            loading="lazy"
+            onerror="this.style.display='none'; this.closest('.site-hero').classList.add('no-logo');"
           />
 
           <div class="site-headline">

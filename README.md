@@ -147,4 +147,30 @@ git commit -m "Remove local secrets.js"
    - The worker forwards to OpenAI using the secret and returns the assistant response.
    - No API keys are present in client-side code or the repo.
 
+## Quick: configure the worker URL (without editing script.js)
+
+You can set the worker URL in one of two safe ways (do NOT commit these files to git):
+
+1. Create a small config file (local, not committed) named `config.js` in the project root:
+
+```javascript
+// local config.js (DO NOT COMMIT)
+window.WORKER_URL = "https://your-worker.your-domain.workers.dev";
+```
+
+Then include it in `index.html` before `script.js` while testing locally:
+
+```html
+<script src="config.js"></script>
+<script src="script.js"></script>
+```
+
+2. Or set it from the browser console while testing:
+
+```javascript
+window.WORKER_URL = "https://your-worker.your-domain.workers.dev";
+```
+
+After the worker URL is set, the frontend will POST `{ messages: [...] }` to the worker, and the worker will forward requests to OpenAI using the secret `OPENAI_API_KEY` stored in Cloudflare Workers (recommended for production).
+
 Enjoy building your L’Oréal beauty assistant! 💄

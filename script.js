@@ -54,8 +54,13 @@ function saveConversation() {
    If the user asks something unrelated, reply politely explaining the scope. */
 const BASE_SYSTEM_PROMPT = `You are a helpful L'Oréal beauty assistant. Only answer questions about L'Oréal products, skincare, makeup, haircare, fragrances, and personalized routines or recommendations involving L'Oréal brands. If a user asks something outside this topic, politely respond: "I can only help with L'Oréal product information, routines, and recommendations. Please ask about those topics." Keep answers friendly, concise, and product-focused.`;
 
-/* Cloudflare Worker URL (replace with your deployed worker URL) */
-const WORKER_URL = "https://your-cloudflare-worker.workers.dev"; // <-- set this to your deployed worker
+/* Cloudflare Worker URL (replace with your deployed worker URL).
+   The code now prefers a configured global: window.WORKER_URL, so you can
+   create a small local config (not committed) that sets window.WORKER_URL
+   or set it in your environment (for example via a tiny config.js).
+*/
+const WORKER_URL =
+  window.WORKER_URL || "https://your-cloudflare-worker.workers.dev"; // <-- set this or provide window.WORKER_URL
 
 /* Utility: try to extract a simple name from the user's message */
 function tryExtractName(text) {
