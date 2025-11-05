@@ -24,11 +24,14 @@
           role="banner"
           aria-label="L'Oréal Smart Product Advisor"
         >
+          <!-- remove direct src to avoid immediate 404; store candidate paths in data attributes -->
           <img
             id="siteLogo"
-            src="img/logo.png"
+            data-src="img/logo.png"
+            data-alt-src="logo.png"
             alt="L'Oréal logo"
             class="site-logo"
+            style="display:none"
           />
           <div class="site-headline">
             <h1 class="site-title">Smart Product Advisor</h1>
@@ -37,6 +40,16 @@
             </p>
             <div class="logo-fallback" aria-hidden="true">L’Oréal</div>
           </div>
+        </div>
+        <!-- configuration banner shown when WORKER_URL not set -->
+        <div
+          id="configBanner"
+          class="config-banner"
+          role="status"
+          aria-live="polite"
+          hidden
+        >
+          <!-- filled by script.js if worker URL is not configured -->
         </div>
       </header>
 
@@ -83,11 +96,7 @@
       </footer>
     </div>
 
-    <!-- In production use a Cloudflare Worker so your API key is NOT exposed client-side.
-         For local testing you can include secrets.js (not recommended for public repos). -->
-    <script src="script.js"></script>
-
-    <!-- Add small script to detect broken logo and toggle fallback (before main script) -->
+    <!-- Logo loader: check candidate paths before assigning img.src so browser won't auto-request missing files -->
     <script>
       // filepath: /workspaces/08-prj-loreal-chatbot/index.html
       (function () {
@@ -95,22 +104,55 @@
         const hero = document.querySelector(".site-hero");
         const fallback = document.querySelector(".logo-fallback");
         if (!logo) return;
-        // Preload to detect load/error reliably
-        const probe = new Image();
-        probe.onload = function () {
-          // image loaded fine — ensure fallback hidden
-          if (hero) hero.classList.remove("no-logo");
-          if (fallback) fallback.style.display = "none";
-          logo.style.display = "";
-        };
-        probe.onerror = function () {
-          // image missing or broken — hide image and show fallback
+
+        // show the text fallback
+        function showFallback() {
           if (hero) hero.classList.add("no-logo");
           if (fallback) fallback.style.display = "block";
-          logo.style.display = "none";
-        };
-        probe.src = logo.src;
+          if (logo) logo.style.display = "none";
+        }
+
+        // try to fetch a URL with HEAD (safer) to check availability
+        async function exists(url) {
+          try {
+            // attempt HEAD first; some servers may not allow HEAD so fall back to GET
+            let r = await fetch(url, { method: "HEAD" });
+            if (r && r.ok) return true;
+            // fallback to GET if HEAD not allowed or returned 405/501
+            r = await fetch(url, { method: "GET" });
+            return r && r.ok;
+          } catch (err) {
+            return false;
+          }
+        }
+
+        (async function tryPaths() {
+          const primary = logo.dataset.src || "img/logo.png";
+          const alt = logo.dataset.altSrc || "logo.png";
+
+          if (await exists(primary)) {
+            logo.src = primary;
+            logo.style.display = "";
+            if (hero) hero.classList.remove("no-logo");
+            if (fallback) fallback.style.display = "none";
+            return;
+          }
+
+          if (await exists(alt)) {
+            logo.src = alt;
+            logo.style.display = "";
+            if (hero) hero.classList.remove("no-logo");
+            if (fallback) fallback.style.display = "none";
+            return;
+          }
+
+          // neither path available — show textual fallback
+          showFallback();
+        })();
       })();
     </script>
+
+    <!-- main UI/worker script -->
+    <script src="script.js"></script>
   </body>
 </html>

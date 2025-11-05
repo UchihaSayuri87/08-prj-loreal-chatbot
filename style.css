@@ -269,6 +269,23 @@ body {
   color: #666666;
 }
 
+/* configuration banner shown when WORKER_URL is not set */
+.config-banner {
+  margin: 12px auto 0;
+  max-width: 900px;
+  background: linear-gradient(
+    90deg,
+    rgba(200, 161, 101, 0.06),
+    rgba(250, 247, 245, 0.02)
+  );
+  border: 1px dashed rgba(200, 161, 101, 0.25);
+  color: var(--accent-dark);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  text-align: center;
+}
+
 /* smaller screens tweaks */
 @media (max-width: 520px) {
   .site-logo {

@@ -3,6 +3,8 @@ const chatForm = document.getElementById("chatForm");
 const userInput = document.getElementById("userInput");
 const chatWindow = document.getElementById("chatWindow");
 const latestQuestionEl = document.getElementById("latestQuestion");
+// Add config banner element for WORKER_URL notices
+const configBanner = document.getElementById("configBanner");
 
 /* Conversation state persisted in localStorage to keep context across refreshes */
 let conversationMessages = []; // array of { role: 'user'|'assistant', content: '...' }
@@ -57,10 +59,11 @@ const BASE_SYSTEM_PROMPT = `You are a helpful L'Oréal beauty assistant. Only an
 /* Cloudflare Worker URL (replace with your deployed worker URL) */
 const WORKER_URL = "https://your-cloudflare-worker.workers.dev"; // <-- set this to your deployed worker
 
-if (WORKER_URL.includes("your-cloudflare-worker")) {
-  console.warn(
-    "WORKER_URL is still the placeholder. Deploy your Cloudflare Worker and set WORKER_URL in script.js to the worker URL."
-  );
+// Show UI banner if WORKER_URL is still the placeholder
+if (configBanner && WORKER_URL.includes("your-cloudflare-worker")) {
+  configBanner.hidden = false;
+  configBanner.textContent =
+    "Configuration required: deploy the provided Cloudflare Worker, set OPENAI_API_KEY in the Worker dashboard, then update WORKER_URL in script.js to your worker URL.";
 }
 
 /* Utility: try to extract a simple name from the user's message */
@@ -134,6 +137,12 @@ chatForm.addEventListener("submit", async (e) => {
     // If WORKER_URL not configured, show friendly UI message and abort request
     if (WORKER_URL.includes("your-cloudflare-worker")) {
       typingEl.remove();
+      // also ensure banner is visible in case it wasn't
+      if (configBanner) {
+        configBanner.hidden = false;
+        configBanner.textContent =
+          "Configuration required: deploy the provided Cloudflare Worker, set OPENAI_API_KEY in the Worker dashboard, then update WORKER_URL in script.js to your worker URL.";
+      }
       appendMessage(
         "ai",
         "Configuration required: deploy the provided Cloudflare Worker, set OPENAI_API_KEY in the Worker dashboard, then update WORKER_URL in script.js to your worker URL."
