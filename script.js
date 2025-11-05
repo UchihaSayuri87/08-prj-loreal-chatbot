@@ -2,6 +2,11 @@
 const chatForm = document.getElementById("chatForm");
 const userInput = document.getElementById("userInput");
 const chatWindow = document.getElementById("chatWindow");
+const latestQuestionEl = document.getElementById("latestQuestion");
+
+/* Conversation state persisted in localStorage to keep context across refreshes */
+let conversationMessages = []; // array of { role: 'user'|'assistant', content: '...' }
+let userName = localStorage.getItem("loreal_userName") || undefined;
 
 /* Helper: add a message to the chat window */
 function appendMessage(role, text) {
@@ -13,13 +18,41 @@ function appendMessage(role, text) {
   chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
-/* Set initial message */
-chatWindow.textContent = "";
-appendMessage("ai", "👋 Hello! How can I help you today?");
+/* Load saved history if available, otherwise set a friendly assistant greeting */
+function loadConversation() {
+  const saved = localStorage.getItem("loreal_chat_history");
+  if (saved) {
+    try {
+      conversationMessages = JSON.parse(saved);
+    } catch {
+      conversationMessages = [];
+    }
+  }
+
+  if (conversationMessages.length === 0) {
+    // initial assistant greeting stored in history so it is part of context
+    conversationMessages = [
+      { role: "assistant", content: "👋 Hello! How can I help you today?" },
+    ];
+    saveConversation();
+  }
+
+  // render conversation
+  chatWindow.textContent = "";
+  for (const msg of conversationMessages) {
+    appendMessage(msg.role === "assistant" ? "ai" : "user", msg.content);
+  }
+}
+function saveConversation() {
+  localStorage.setItem(
+    "loreal_chat_history",
+    JSON.stringify(conversationMessages)
+  );
+}
 
 /* System prompt: only answer L'Oréal product, routine, and recommendation questions.
    If the user asks something unrelated, reply politely explaining the scope. */
-const SYSTEM_PROMPT = `You are a helpful L'Oréal beauty assistant. Only answer questions about L'Oréal products, skincare, makeup, haircare, fragrances, and personalized routines or recommendations involving L'Oréal brands. If a user asks something outside this topic, politely respond: "I can only help with L'Oréal product information, routines, and recommendations. Please ask about those topics." Keep answers friendly, concise, and product-focused.`;
+const BASE_SYSTEM_PROMPT = `You are a helpful L'Oréal beauty assistant. Only answer questions about L'Oréal products, skincare, makeup, haircare, fragrances, and personalized routines or recommendations involving L'Oréal brands. If a user asks something outside this topic, politely respond: "I can only help with L'Oréal product information, routines, and recommendations. Please ask about those topics." Keep answers friendly, concise, and product-focused.`;
 
 /* Cloudflare Worker URL (replace with your deployed worker URL) */
 const WORKER_URL = "https://your-cloudflare-worker.workers.dev"; // <-- set this to your deployed worker
@@ -30,18 +63,65 @@ if (WORKER_URL.includes("your-cloudflare-worker")) {
   );
 }
 
-/* Handle form submit */
+/* Utility: try to extract a simple name from the user's message */
+function tryExtractName(text) {
+  // crude patterns for classroom demo; keep simple
+  const patterns = [
+    /my name is\s+([A-Za-z]+)/i,
+    /i am\s+([A-Za-z]+)/i,
+    /i'm\s+([A-Za-z]+)/i,
+  ];
+  for (const p of patterns) {
+    const m = text.match(p);
+    if (m && m[1]) return m[1];
+  }
+  return null;
+}
+
+/* Build messages array to send to the API: system prompt (personalized if we know the name)
+   followed by the full conversation history so the model has context. */
+function buildOutboundMessages() {
+  const systemPrompt = userName
+    ? `${BASE_SYSTEM_PROMPT} The user's name is ${userName}.`
+    : BASE_SYSTEM_PROMPT;
+
+  // convert conversationMessages to the API shape (role/content)
+  const apiMessages = conversationMessages.map((m) => {
+    const role = m.role === "assistant" ? "assistant" : "user";
+    return { role, content: m.content };
+  });
+
+  return [{ role: "system", content: systemPrompt }, ...apiMessages];
+}
+
+/* Initialize UI from saved history */
+loadConversation();
+
+/* When the user submits a question */
 chatForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const text = userInput.value.trim();
   if (!text) return;
 
-  // Show user's message in the chat
+  // Show user's message in the chat and add to history
   appendMessage("user", text);
+  conversationMessages.push({ role: "user", content: text });
+  saveConversation();
+
+  // Display the user's latest question above the response (resets each new question)
+  latestQuestionEl.textContent = `Latest question: ${text}`;
+
   userInput.value = "";
   userInput.disabled = true;
 
-  // Show a temporary "typing" indicator
+  // Try to capture a simple name from the user's input and remember it
+  const extracted = tryExtractName(text);
+  if (extracted && !userName) {
+    userName = extracted;
+    localStorage.setItem("loreal_userName", userName);
+  }
+
+  // Show a temporary "typing" indicator as an assistant message (visual only)
   const typingEl = document.createElement("div");
   typingEl.className = "msg ai";
   typingEl.textContent = "AI is typing…";
@@ -49,15 +129,10 @@ chatForm.addEventListener("submit", async (e) => {
   chatWindow.scrollTop = chatWindow.scrollHeight;
 
   try {
-    // Build messages array including the system prompt
-    const messages = [
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: text },
-    ];
+    const outbound = buildOutboundMessages();
 
     // If WORKER_URL not configured, show friendly UI message and abort request
     if (WORKER_URL.includes("your-cloudflare-worker")) {
-      // remove typing indicator and notify user in the chat window
       typingEl.remove();
       appendMessage(
         "ai",
@@ -68,14 +143,10 @@ chatForm.addEventListener("submit", async (e) => {
       return;
     }
 
-    // Send the messages array to your Cloudflare Worker.
-    // The worker will forward the request to OpenAI using the secret stored in Cloudflare.
     const response = await fetch(WORKER_URL, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ messages }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages: outbound }),
     });
 
     const data = await response.json();
@@ -93,10 +164,15 @@ chatForm.addEventListener("submit", async (e) => {
         ? data.choices[0].message.content
         : "Sorry, I couldn't get a reply. Please try again.";
 
+    // Append assistant reply to history and UI
     appendMessage("ai", assistantText);
+    conversationMessages.push({ role: "assistant", content: assistantText });
+    saveConversation();
   } catch (err) {
     // Remove typing indicator and show error
-    typingEl.remove();
+    try {
+      typingEl.remove();
+    } catch {}
     appendMessage(
       "ai",
       "Error: Unable to get a response. Check console for details."

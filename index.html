@@ -38,6 +38,12 @@
       <!------- Chat Area ------->
       <main>
         <section class="chatbox">
+          <!-- Display the user's latest question above the assistant response -->
+          <div
+            id="latestQuestion"
+            class="latest-question"
+            aria-live="polite"
+          ></div>
           <div id="chatWindow" class="chat-window">
             <!-- messages will be appended here via JS -->
           </div>

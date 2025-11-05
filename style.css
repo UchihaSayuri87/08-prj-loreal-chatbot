@@ -111,13 +111,26 @@ body {
   border: 1px solid rgba(10, 10, 10, 0.06);
 }
 
+/* latest question banner shown above each response */
+.latest-question {
+  background: rgba(200, 161, 101, 0.06);
+  border-left: 4px solid var(--accent-gold);
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  color: var(--accent-dark);
+  font-style: italic;
+  text-align: center;
+  font-size: 14px;
+}
+
 /* messages */
 .msg {
-  margin-bottom: 14px;
-  line-height: 1.5;
+  margin-bottom: 12px;
+  line-height: 1.4;
   max-width: 85%;
-  padding: 10px 12px;
-  border-radius: 10px;
+  padding: 10px 14px;
+  border-radius: 14px;
   display: inline-block;
 }
 
@@ -127,7 +140,8 @@ body {
   color: #fff;
   align-self: flex-end;
   float: right;
-  border-bottom-right-radius: 4px;
+  border-bottom-right-radius: 6px;
+  border-bottom-left-radius: 14px;
 }
 
 /* ai (left) */
@@ -136,7 +150,8 @@ body {
   color: #333;
   border: 1px solid rgba(10, 10, 10, 0.06);
   float: left;
-  border-bottom-left-radius: 4px;
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 14px;
 }
 
 /* clear floats after message list so layout stays stable */
