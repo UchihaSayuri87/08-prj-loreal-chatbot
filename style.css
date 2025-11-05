@@ -210,6 +210,30 @@ body {
   outline-offset: 2px;
 }
 
+/* fallback text when logo image is missing */
+.logo-fallback {
+  display: none;
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--accent-dark);
+  margin-top: 8px;
+}
+
+/* when logo fails to load, site-hero gets .no-logo and shows fallback */
+.site-hero.no-logo .logo-fallback {
+  display: block;
+}
+
+/* tighten spacing when no logo is present */
+.site-hero.no-logo .site-logo {
+  display: none;
+}
+
+.site-hero.no-logo .site-headline {
+  margin-left: 0;
+  text-align: center;
+}
+
 /* visually hidden */
 .visually-hidden {
   position: absolute;

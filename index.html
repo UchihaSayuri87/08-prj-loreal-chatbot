@@ -19,18 +19,23 @@
     <div class="page-wrapper">
       <!------- Header / Branding ------->
       <header class="site-header">
-        <!-- Use the attached image as your logo: save it as /workspaces/08-prj-loreal-chatbot/logo.png -->
         <div
           class="site-hero"
           role="banner"
           aria-label="L'Oréal Smart Product Advisor"
         >
-          <img src="logo.png" alt="L'Oréal logo" class="site-logo" />
+          <img
+            id="siteLogo"
+            src="img/logo.png"
+            alt="L'Oréal logo"
+            class="site-logo"
+          />
           <div class="site-headline">
             <h1 class="site-title">Smart Product Advisor</h1>
             <p class="site-tagline">
               Personalized L’Oréal product recommendations & routines
             </p>
+            <div class="logo-fallback" aria-hidden="true">L’Oréal</div>
           </div>
         </div>
       </header>
@@ -81,5 +86,31 @@
     <!-- In production use a Cloudflare Worker so your API key is NOT exposed client-side.
          For local testing you can include secrets.js (not recommended for public repos). -->
     <script src="script.js"></script>
+
+    <!-- Add small script to detect broken logo and toggle fallback (before main script) -->
+    <script>
+      // filepath: /workspaces/08-prj-loreal-chatbot/index.html
+      (function () {
+        const logo = document.getElementById("siteLogo");
+        const hero = document.querySelector(".site-hero");
+        const fallback = document.querySelector(".logo-fallback");
+        if (!logo) return;
+        // Preload to detect load/error reliably
+        const probe = new Image();
+        probe.onload = function () {
+          // image loaded fine — ensure fallback hidden
+          if (hero) hero.classList.remove("no-logo");
+          if (fallback) fallback.style.display = "none";
+          logo.style.display = "";
+        };
+        probe.onerror = function () {
+          // image missing or broken — hide image and show fallback
+          if (hero) hero.classList.add("no-logo");
+          if (fallback) fallback.style.display = "block";
+          logo.style.display = "none";
+        };
+        probe.src = logo.src;
+      })();
+    </script>
   </body>
 </html>
