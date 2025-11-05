@@ -25,13 +25,15 @@
           role="banner"
           aria-label="L'Oréal Smart Product Advisor"
         >
-          <!-- raster logo (place your file at img/logo.png) -->
+          <!-- raster logo: do not set src immediately to avoid automatic 404 requests.
+               Place your file at /workspaces/08-prj-loreal-chatbot/img/logo.png -->
           <img
             id="siteLogo"
-            src="img/logo.png"
+            data-src="img/logo.png"
+            data-alt-src="logo.png"
             alt="L'Oréal logo"
             class="site-logo"
-            onerror="this.style.display='none'; this.closest('.site-hero').classList.add('no-logo');"
+            style="display: none"
           />
 
           <div class="site-headline">
@@ -114,6 +116,58 @@
         </nav>
       </footer>
     </div>
+
+    <!-- Logo loader: check candidate paths before assigning img.src so browser won't auto-request missing files -->
+    <script>
+      // filepath: /workspaces/08-prj-loreal-chatbot/index.html
+      (function () {
+        const logo = document.getElementById("siteLogo");
+        const hero = document.querySelector(".site-hero");
+        const fallback = document.querySelector(".logo-fallback");
+        if (!logo) return;
+
+        function showFallback() {
+          if (hero) hero.classList.add("no-logo");
+          if (fallback) fallback.style.display = "block";
+          if (logo) logo.style.display = "none";
+        }
+
+        async function exists(url) {
+          try {
+            // HEAD is faster; fall back to GET if server disallows HEAD
+            let r = await fetch(url, { method: "HEAD" });
+            if (r && r.ok) return true;
+            r = await fetch(url, { method: "GET" });
+            return r && r.ok;
+          } catch (err) {
+            return false;
+          }
+        }
+
+        (async function tryPaths() {
+          const primary = logo.dataset.src || "img/logo.png";
+          const alt = logo.dataset.altSrc || "logo.png";
+
+          if (await exists(primary)) {
+            logo.src = primary;
+            logo.style.display = "";
+            if (hero) hero.classList.remove("no-logo");
+            if (fallback) fallback.style.display = "none";
+            return;
+          }
+
+          if (await exists(alt)) {
+            logo.src = alt;
+            logo.style.display = "";
+            if (hero) hero.classList.remove("no-logo");
+            if (fallback) fallback.style.display = "none";
+            return;
+          }
+
+          showFallback();
+        })();
+      })();
+    </script>
 
     <!-- main UI/worker script -->
     <script src="script.js"></script>
