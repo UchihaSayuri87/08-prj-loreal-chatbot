@@ -50,26 +50,54 @@ body {
 
 /* brand palette & helpers */
 :root {
-  --accent-gold: #c8a165; /* warm gold accent */
-  --accent-dark: #0a0a0a; /* deep black for headings/buttons */
+  --accent-gold: #b78f46; /* slightly richer warm gold */
+  --accent-dark: #0b0b0b; /* deep black for headings/buttons */
   --muted: #6b6b6b;
-  --bg: #faf7f5;
+  --bg: #fffaf8; /* soft warm background */
+}
+
+/* Headings use an elegant serif for a luxury look; UI uses Montserrat */
+.site-title,
+.site-tagline,
+.site-headline h1 {
+  font-family: "Playfair Display", "Montserrat", serif;
+}
+
+.site-title {
+  color: var(--accent-dark);
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: none;
+}
+
+/* logo tweaks for polish */
+.site-logo {
+  display: block;
+  margin: 0;
+  width: 120px;
+  height: auto;
+  border-radius: 6px;
+  box-shadow: none;
+  background: transparent;
+  padding: 0;
 }
 
 /* hero/header styling inspired by brand visuals */
 .site-hero {
   background: linear-gradient(
     180deg,
-    rgba(200, 161, 101, 0.07),
-    rgba(250, 247, 245, 0.4)
+    rgba(11, 11, 11, 0.02),
+    rgba(250, 247, 245, 0.02)
   );
-  border-radius: 10px;
-  padding: 18px;
+  border-radius: 8px;
+  padding: 14px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
   justify-content: center;
-  box-shadow: 0 6px 18px rgba(10, 10, 10, 0.04);
+  box-shadow: none;
   margin-bottom: 8px;
 }
 
@@ -81,8 +109,10 @@ body {
 .site-title {
   color: var(--accent-dark);
   margin: 0;
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: none;
 }
 
 /* small descriptive tagline */
@@ -91,18 +121,7 @@ body {
   color: var(--muted);
   font-size: 13px;
   font-style: italic;
-}
-
-/* logo tweaks for polish */
-.site-logo {
-  display: block;
-  margin: 0;
-  width: 110px;
-  height: auto;
-  border-radius: 6px;
-  box-shadow: 0 4px 14px rgba(10, 10, 10, 0.06);
-  background: #fff;
-  padding: 6px;
+  font-family: "Montserrat", Arial, sans-serif;
 }
 
 /* Make the page vertically stacked and let the main/chat area grow */
@@ -135,12 +154,11 @@ main {
   min-height: 220px;
   max-height: 80vh;
   overflow-y: auto;
-  padding: 14px;
-  background: linear-gradient(180deg, #ffffff, #fbf8f6);
-  white-space: pre-line;
+  padding: 18px;
+  background: #ffffff;
   border-radius: 12px;
-  box-shadow: 0 8px 30px rgba(10, 10, 10, 0.06);
-  border: 1px solid rgba(10, 10, 10, 0.06);
+  border: 1px solid rgba(11, 11, 11, 0.04);
+  box-shadow: 0 12px 30px rgba(11, 11, 11, 0.06);
 }
 
 /* keep the form anchored below the chat window */
@@ -177,7 +195,8 @@ main {
   justify-content: center;
   cursor: pointer;
   transition: filter 0.18s;
-  border-radius: 8px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(183, 143, 70, 0.12);
 }
 
 .chat-form button .material-icons {
@@ -201,14 +220,14 @@ main {
   margin-bottom: 8px;
 }
 .toolbar-btn {
+  border: 1px solid rgba(11, 11, 11, 0.06);
   background: transparent;
-  border: 1px solid rgba(10, 10, 10, 0.08);
-  padding: 6px 10px;
   border-radius: 8px;
   font-size: 13px;
   cursor: pointer;
   color: var(--accent-dark);
 }
+
 .toolbar-btn:hover {
   background: rgba(10, 10, 10, 0.02);
 }
@@ -246,11 +265,13 @@ main {
 /* messages */
 .msg {
   margin-bottom: 12px;
-  line-height: 1.4;
-  max-width: 85%;
-  padding: 10px 14px;
-  border-radius: 14px;
+  line-height: 1.45;
+  max-width: 80%;
+  padding: 12px 16px;
+  border-radius: 16px;
   display: inline-block;
+  font-family: "Montserrat", Arial, sans-serif;
+  font-size: 15px;
 }
 
 /* user (right) */
@@ -260,17 +281,17 @@ main {
   align-self: flex-end;
   float: right;
   border-bottom-right-radius: 6px;
-  border-bottom-left-radius: 14px;
+  border-bottom-left-radius: 16px;
 }
 
 /* ai (left) */
 .msg.ai {
   background: #fff;
-  color: #333;
-  border: 1px solid rgba(10, 10, 10, 0.06);
+  color: var(--accent-dark);
+  border: 1px solid rgba(11, 11, 11, 0.06);
   float: left;
   border-bottom-left-radius: 6px;
-  border-bottom-right-radius: 14px;
+  border-bottom-right-radius: 16px;
 }
 
 /* clear floats after message list so layout stays stable */
@@ -439,7 +460,7 @@ main {
 
   .chat-window {
     min-height: 180px;
-    padding: 10px;
+    padding: 12px;
     font-size: 15px;
   }
 
