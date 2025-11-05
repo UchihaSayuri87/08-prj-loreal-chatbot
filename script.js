@@ -5,8 +5,6 @@ const chatWindow = document.getElementById("chatWindow");
 const latestQuestionEl = document.getElementById("latestQuestion");
 // Add config banner element for WORKER_URL notices
 const configBanner = document.getElementById("configBanner");
-// Dismiss button (inside the banner)
-const dismissBannerBtn = document.getElementById("dismissBannerBtn");
 
 /* Conversation state persisted in localStorage to keep context across refreshes */
 let conversationMessages = []; // array of { role: 'user'|'assistant', content: '...' }
@@ -65,12 +63,6 @@ const WORKER_URL = "https://your-cloudflare-worker.workers.dev"; // <-- set this
 async function updateConfigBanner() {
   if (!configBanner) return false;
 
-  // If the user dismissed the banner this session, keep it hidden (temporary)
-  if (sessionStorage.getItem("configBannerDismissed") === "1") {
-    configBanner.hidden = true;
-    return true; // treat as OK so UI won't block
-  }
-
   // If still the placeholder, show a clear setup message.
   if (WORKER_URL.includes("your-cloudflare-worker")) {
     configBanner.hidden = false;
@@ -83,7 +75,6 @@ async function updateConfigBanner() {
         </div>
       </div>
     `;
-    if (dismissBannerBtn) configBanner.appendChild(dismissBannerBtn);
     return false;
   }
 
@@ -135,9 +126,6 @@ async function updateConfigBanner() {
         </div>
       `;
     }
-
-    // re-attach dismiss button if present
-    if (dismissBannerBtn) configBanner.appendChild(dismissBannerBtn);
 
     // Log the detailed error for debugging
     console.error("Worker reachability check failed:", err);
@@ -228,14 +216,6 @@ if (resetBtn) {
     resetContext();
     // show a small confirmation message in the chat
     appendMessage("ai", "Context has been reset. How can I help you now?");
-  });
-}
-
-/* Dismiss button handler: hide banner for this session */
-if (dismissBannerBtn) {
-  dismissBannerBtn.addEventListener("click", () => {
-    sessionStorage.setItem("configBannerDismissed", "1");
-    if (configBanner) configBanner.hidden = true;
   });
 }
 
