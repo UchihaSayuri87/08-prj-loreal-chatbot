@@ -11,4 +11,14 @@ L’Oréal is exploring the power of AI, and your job is to showcase what's poss
 
 When deploying through Cloudflare, make sure your API request body (in `script.js`) includes a `messages` array and handle the response by extracting `data.choices[0].message.content`.
 
+## ☁️ Cloudflare Worker (production)
+
+Deploy the provided `RESOURCE_cloudflare-worker.js` as a Cloudflare Worker and set the worker's secret named `OPENAI_API_KEY` in the Workers dashboard.
+
+In `script.js` set:
+
+- WORKER_URL = "https://your-worker.your-domain.workers.dev"
+
+Then remove `secrets.js` from `index.html` so the API key is not exposed to the browser. For local classroom testing you may keep a local `secrets.js`, but never commit real keys to a public repo.
+
 Enjoy building your L’Oréal beauty assistant! 💄

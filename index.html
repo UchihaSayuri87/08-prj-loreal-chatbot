@@ -19,6 +19,8 @@
     <div class="page-wrapper">
       <!------- Header / Branding ------->
       <header class="site-header">
+        <!-- Add your L'Oréal logo file at /workspaces/08-prj-loreal-chatbot/logo.png -->
+        <img src="logo.png" alt="L'Oréal logo" class="site-logo" />
         <h1 class="site-title">Smart Product Advisor</h1>
       </header>
 
@@ -59,8 +61,8 @@
       </footer>
     </div>
 
-    <!-- secrets.js can be removed when using Cloudflare Workers for API requests -->
-    <script src="secrets.js"></script>
+    <!-- In production use a Cloudflare Worker so your API key is NOT exposed client-side.
+         For local testing you can include secrets.js (not recommended for public repos). -->
     <script src="script.js"></script>
   </body>
 </html>
