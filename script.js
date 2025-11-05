@@ -207,6 +207,19 @@ chatForm.addEventListener("submit", async (e) => {
           }),
         }
       );
+
+      // If HTTP not OK, try to surface a helpful error
+      if (!response.ok) {
+        let errText = `OpenAI request failed: ${response.status} ${response.statusText}`;
+        try {
+          const errJson = await response.json();
+          if (errJson && errJson.error && errJson.error.message) {
+            errText += ` — ${errJson.error.message}`;
+          }
+        } catch {}
+        throw new Error(errText);
+      }
+
       data = await response.json();
     } else if (!WORKER_URL.includes("your-cloudflare-worker")) {
       // Fallback: call the deployed Cloudflare Worker if WORKER_URL has been set
@@ -215,6 +228,17 @@ chatForm.addEventListener("submit", async (e) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: outbound }),
       });
+
+      if (!response.ok) {
+        let errText = `Worker request failed: ${response.status} ${response.statusText}`;
+        try {
+          const errJson = await response.json();
+          if (errJson && errJson.error)
+            errText += ` — ${JSON.stringify(errJson.error)}`;
+        } catch {}
+        throw new Error(errText);
+      }
+
       data = await response.json();
     } else {
       // Neither local key nor worker URL configured: inform user in-chat (no worker banner)
@@ -231,18 +255,24 @@ chatForm.addEventListener("submit", async (e) => {
     // Remove typing indicator
     typingEl.remove();
 
-    // Extract assistant text per instructions (data.choices[0].message.content)
+    // Extract assistant text per instructions (data.choices[0].message.content) with fallback
     const assistantText =
-      data &&
-      data.choices &&
-      data.choices[0] &&
-      data.choices[0].message &&
-      data.choices[0].message.content
-        ? data.choices[0].message.content
-        : "Sorry, I couldn't get a reply. Please try again.";
+      (data &&
+        data.choices &&
+        data.choices[0] &&
+        ((data.choices[0].message && data.choices[0].message.content) ||
+          data.choices[0].text)) ||
+      null;
 
-    appendMessage("ai", assistantText);
-    conversationMessages.push({ role: "assistant", content: assistantText });
+    const finalAssistantText = assistantText
+      ? assistantText
+      : "Sorry, I couldn't get a reply. Please try again.";
+
+    appendMessage("ai", finalAssistantText);
+    conversationMessages.push({
+      role: "assistant",
+      content: finalAssistantText,
+    });
     saveConversation();
   } catch (err) {
     try {
@@ -259,3 +289,41 @@ chatForm.addEventListener("submit", async (e) => {
     userInput.focus();
   }
 });
+
+// Ephemeral dev key support (sessionStorage) — DEV ONLY.
+// If you run in the browser console:
+//   setDevOpenAIKey('sk-REPLACE_WITH_YOUR_KEY')      // saves to sessionStorage and exposes window.OPENAI_API_KEY
+//   clearDevOpenAIKey()                              // removes the session key
+// This avoids creating files or committing secrets.
+(function () {
+  try {
+    const sessionKey = sessionStorage.getItem("dev_OPENAI_API_KEY");
+    if (sessionKey) {
+      window.OPENAI_API_KEY = sessionKey;
+    }
+  } catch (e) {
+    // ignore sessionStorage errors in restricted environments
+  }
+
+  window.setDevOpenAIKey = function (key) {
+    if (!key) return;
+    try {
+      sessionStorage.setItem("dev_OPENAI_API_KEY", key);
+      window.OPENAI_API_KEY = key;
+      // friendly console hint
+      console.info("Dev OpenAI key saved for this session (sessionStorage).");
+    } catch (e) {
+      console.error("Failed to save dev key to sessionStorage:", e);
+    }
+  };
+
+  window.clearDevOpenAIKey = function () {
+    try {
+      sessionStorage.removeItem("dev_OPENAI_API_KEY");
+      window.OPENAI_API_KEY = undefined;
+      console.info("Dev OpenAI key cleared from sessionStorage.");
+    } catch (e) {
+      console.error("Failed to clear dev key from sessionStorage:", e);
+    }
+  };
+})();

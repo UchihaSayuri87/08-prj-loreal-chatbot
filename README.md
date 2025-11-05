@@ -140,7 +140,7 @@ git commit -m "Remove local secrets.js"
 
    - Deploy the worker.
    - In the Workers dashboard → Variables & Secrets add: name = OPENAI_API_KEY, value = <your key>.
-   - Update `script.js`: set `WORKER_URL = "https://your-worker.your-domain.workers.dev"` and do NOT include `secrets.js` in `index.html`.
+   - Update `script.js` to set `WORKER_URL = "https://your-worker.your-domain.workers.dev"` and do NOT include `secrets.js` in `index.html`.
 
 4. Verify in production:
    - The frontend should POST { messages: [...] } to your worker URL.
@@ -174,3 +174,19 @@ window.WORKER_URL = "https://your-worker.your-domain.workers.dev";
 After the worker URL is set, the frontend will POST `{ messages: [...] }` to the worker, and the worker will forward requests to OpenAI using the secret `OPENAI_API_KEY` stored in Cloudflare Workers (recommended for production).
 
 Enjoy building your L’Oréal beauty assistant! 💄
+
+## Secure local setup (create secrets.js without committing)
+
+Run this in your Codespace / local terminal to create `secrets.js` interactively (the key is not stored in shell history):
+
+```bash
+# Run this in the project root. It will prompt you to paste the key silently.
+read -s -p "Enter OpenAI API key (will not be printed): " KEY && echo && \
+  printf "const OPENAI_API_KEY = '%s';\nwindow.OPENAI_API_KEY = OPENAI_API_KEY;\n" "$KEY" > secrets.js && \
+  echo "secrets.js created (not committed)."
+```
+
+Notes:
+
+- secrets.js is listed in .gitignore by default. Do NOT commit it.
+- For production, remove secrets.js and use the Cloudflare Worker approach described above (set OPENAI_API_KEY in Workers → Variables & Secrets and set WORKER_URL in config).

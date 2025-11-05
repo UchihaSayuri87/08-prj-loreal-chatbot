@@ -102,10 +102,36 @@
       </footer>
     </div>
 
-    <!-- secrets.js is intentionally NOT included in production to avoid exposing API keys.
-         For local testing only, create secrets.js (not committed) and include it here during development. -->
+    <!-- Try to load optional local configs (secrets.js, config.js) if present.
+         We HEAD-check first to avoid noisy 404s, then inject the script. -->
+    <script>
+      (async function tryLoadOptional(path) {
+        try {
+          const res = await fetch(path, { method: "HEAD" });
+          if (res && (res.ok || res.status === 405)) {
+            const s = document.createElement("script");
+            s.src = path;
+            document.head.appendChild(s);
+          }
+        } catch (err) {
+          // ignore if file doesn't exist or network blocked
+        }
+      });
+      // attempt to load local secrets/config for dev only
+      tryLoadOptional("secrets.js");
+      tryLoadOptional("config.js");
+    </script>
 
     <!-- main UI/worker script -->
     <script src="script.js"></script>
+
+    <!--
+      DEV: To test locally without adding files, open the browser console and run:
+        setDevOpenAIKey('sk-REPLACE_WITH_YOUR_KEY')
+      or directly:
+        sessionStorage.setItem('dev_OPENAI_API_KEY', 'sk-REPLACE_WITH_YOUR_KEY'); window.OPENAI_API_KEY = 'sk-REPLACE_WITH_YOUR_KEY';
+      Then reload the page and the frontend will use the key for direct OpenAI calls.
+      DO NOT commit keys or paste them into public chats. Use this only in a private/dev browser session.
+    -->
   </body>
 </html>
