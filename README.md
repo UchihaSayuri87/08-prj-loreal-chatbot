@@ -15,10 +15,12 @@ When deploying through Cloudflare, make sure your API request body (in `script.j
 
 Deploy the provided `RESOURCE_cloudflare-worker.js` as a Cloudflare Worker and set the worker's secret named `OPENAI_API_KEY` in the Workers dashboard.
 
-In `script.js` set:
+After deployment:
 
-- WORKER_URL = "https://your-worker.your-domain.workers.dev"
+- Note the worker URL (for example: https://your-worker.your-domain.workers.dev).
+- Open `script.js` and set: WORKER_URL = "https://your-worker.your-domain.workers.dev"
+- Remove any local `secrets.js` includes from `index.html` so the API key is not exposed to the browser.
 
-Then remove `secrets.js` from `index.html` so the API key is not exposed to the browser. For local classroom testing you may keep a local `secrets.js`, but never commit real keys to a public repo.
+For local classroom testing only, you may use a local secrets.js, but never commit real keys to a public repo.
 
 Enjoy building your L’Oréal beauty assistant! 💄

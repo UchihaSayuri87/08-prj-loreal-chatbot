@@ -17,8 +17,18 @@ function appendMessage(role, text) {
 chatWindow.textContent = "";
 appendMessage("ai", "👋 Hello! How can I help you today?");
 
+/* System prompt: only answer L'Oréal product, routine, and recommendation questions.
+   If the user asks something unrelated, reply politely explaining the scope. */
+const SYSTEM_PROMPT = `You are a helpful L'Oréal beauty assistant. Only answer questions about L'Oréal products, skincare, makeup, haircare, fragrances, and personalized routines or recommendations involving L'Oréal brands. If a user asks something outside this topic, politely respond: "I can only help with L'Oréal product information, routines, and recommendations. Please ask about those topics." Keep answers friendly, concise, and product-focused.`;
+
 /* Cloudflare Worker URL (replace with your deployed worker URL) */
-const WORKER_URL = "https://your-cloudflare-worker.workers.dev"; // <-- set this
+const WORKER_URL = "https://your-cloudflare-worker.workers.dev"; // <-- set this to your deployed worker
+
+if (WORKER_URL.includes("your-cloudflare-worker")) {
+  console.warn(
+    "WORKER_URL is still the placeholder. Deploy your Cloudflare Worker and set WORKER_URL in script.js to the worker URL."
+  );
+}
 
 /* Handle form submit */
 chatForm.addEventListener("submit", async (e) => {
@@ -39,53 +49,28 @@ chatForm.addEventListener("submit", async (e) => {
   chatWindow.scrollTop = chatWindow.scrollHeight;
 
   try {
-    // Build messages array for the chat API
+    // Build messages array including the system prompt
     const messages = [
-      {
-        role: "system",
-        content: "You are a helpful L'Oréal beauty assistant.",
-      },
+      { role: "system", content: SYSTEM_PROMPT },
       { role: "user", content: text },
     ];
 
-    let data;
+    // Send the messages array to your Cloudflare Worker.
+    // The worker will forward the request to OpenAI using the secret stored in Cloudflare.
+    const response = await fetch(WORKER_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ messages }),
+    });
 
-    if (window.OPENAI_API_KEY) {
-      // Local/testing: call OpenAI directly (not for production)
-      const response = await fetch(
-        "https://api.openai.com/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            // secrets.js exposes the key as window.OPENAI_API_KEY
-            Authorization: `Bearer ${window.OPENAI_API_KEY}`,
-          },
-          body: JSON.stringify({
-            model: "gpt-4o",
-            messages: messages,
-            max_tokens: 300,
-          }),
-        }
-      );
-      data = await response.json();
-    } else {
-      // Production: call your Cloudflare Worker which forwards the request securely
-      // The worker expects a JSON body like: { messages: [...] }
-      const response = await fetch(WORKER_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ messages }),
-      });
-      data = await response.json();
-    }
+    const data = await response.json();
 
     // Remove typing indicator
     typingEl.remove();
 
-    // Extract assistant text per instructions
+    // Extract assistant text per instructions (data.choices[0].message.content)
     const assistantText =
       data &&
       data.choices &&
@@ -103,7 +88,7 @@ chatForm.addEventListener("submit", async (e) => {
       "ai",
       "Error: Unable to get a response. Check console for details."
     );
-    console.error("OpenAI request error:", err);
+    console.error("Worker request error:", err);
   } finally {
     userInput.disabled = false;
     userInput.focus();
