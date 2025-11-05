@@ -25,16 +25,32 @@
           role="banner"
           aria-label="L'Oréal Smart Product Advisor"
         >
-          <!-- don't set src to avoid automatic 404 requests; loader will set src when available -->
-          <img
+          <!-- Embedded inline SVG logo to avoid external 404 requests -->
+          <svg
             id="siteLogo"
-            data-src="img/logo.png"
-            data-alt-src="logo.png"
-            alt="L'Oréal logo"
             class="site-logo"
-            style="display: none"
-          />
-
+            role="img"
+            aria-labelledby="logoTitle logoDesc"
+            viewBox="0 0 300 80"
+            xmlns="http://www.w3.org/2000/svg"
+            focusable="false"
+          >
+            <title id="logoTitle">L'Oréal</title>
+            <desc id="logoDesc">L'Oréal Smart Product Advisor logo</desc>
+            <rect width="100%" height="100%" fill="none" />
+            <text
+              x="50%"
+              y="55%"
+              text-anchor="middle"
+              font-family="Playfair Display, Montserrat, Arial, Helvetica, sans-serif"
+              font-size="28"
+              font-weight="700"
+              fill="#0a0a0a"
+            >
+              L’ORÉAL
+            </text>
+            <rect x="30" y="68" width="240" height="4" fill="#b78f46" rx="2" />
+          </svg>
           <div class="site-headline">
             <h1 class="site-title">Smart Product Advisor</h1>
             <p class="site-tagline">
@@ -115,58 +131,6 @@
         </nav>
       </footer>
     </div>
-
-    <!-- Logo loader: check candidate paths before assigning img.src so browser won't auto-request missing files -->
-    <script>
-      // filepath: /workspaces/08-prj-loreal-chatbot/index.html
-      (function () {
-        const logo = document.getElementById("siteLogo");
-        const hero = document.querySelector(".site-hero");
-        const fallback = document.querySelector(".logo-fallback");
-        if (!logo) return;
-
-        function showFallback() {
-          if (hero) hero.classList.add("no-logo");
-          if (fallback) fallback.style.display = "block";
-          if (logo) logo.style.display = "none";
-        }
-
-        async function exists(url) {
-          try {
-            // Try HEAD first to avoid downloading the full file; fall back to GET if needed
-            let r = await fetch(url, { method: "HEAD" });
-            if (r && r.ok) return true;
-            r = await fetch(url, { method: "GET" });
-            return r && r.ok;
-          } catch (err) {
-            return false;
-          }
-        }
-
-        (async function tryPaths() {
-          const primary = logo.dataset.src || "img/logo.png";
-          const alt = logo.dataset.altSrc || "logo.png";
-
-          if (await exists(primary)) {
-            logo.src = primary;
-            logo.style.display = "";
-            if (hero) hero.classList.remove("no-logo");
-            if (fallback) fallback.style.display = "none";
-            return;
-          }
-
-          if (await exists(alt)) {
-            logo.src = alt;
-            logo.style.display = "";
-            if (hero) hero.classList.remove("no-logo");
-            if (fallback) fallback.style.display = "none";
-            return;
-          }
-
-          showFallback();
-        })();
-      })();
-    </script>
 
     <!-- main UI/worker script -->
     <script src="script.js"></script>
