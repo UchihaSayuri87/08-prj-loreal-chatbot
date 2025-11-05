@@ -5,6 +5,8 @@ const chatWindow = document.getElementById("chatWindow");
 const latestQuestionEl = document.getElementById("latestQuestion");
 // Add config banner element for WORKER_URL notices
 const configBanner = document.getElementById("configBanner");
+// Dismiss button (inside the banner)
+const dismissBannerBtn = document.getElementById("dismissBannerBtn");
 
 /* Conversation state persisted in localStorage to keep context across refreshes */
 let conversationMessages = []; // array of { role: 'user'|'assistant', content: '...' }
@@ -59,12 +61,63 @@ const BASE_SYSTEM_PROMPT = `You are a helpful L'Oréal beauty assistant. Only an
 /* Cloudflare Worker URL (replace with your deployed worker URL) */
 const WORKER_URL = "https://your-cloudflare-worker.workers.dev"; // <-- set this to your deployed worker
 
-// Show UI banner if WORKER_URL is still the placeholder
-if (configBanner && WORKER_URL.includes("your-cloudflare-worker")) {
-  configBanner.hidden = false;
-  configBanner.textContent =
-    "Configuration required: deploy the provided Cloudflare Worker, set OPENAI_API_KEY in the Worker dashboard, then update WORKER_URL in script.js to your worker URL.";
+// Replace the old unconditional placeholder check with a health-check function.
+// The banner will be shown only if the URL is still the placeholder or unreachable.
+async function updateConfigBanner() {
+  if (!configBanner) return false;
+
+  // If the user dismissed the banner this session, keep it hidden (temporary)
+  if (sessionStorage.getItem("configBannerDismissed") === "1") {
+    configBanner.hidden = true;
+    return true; // treat as OK so UI won't block
+  }
+
+  // If still the placeholder, show a clear setup message.
+  if (WORKER_URL.includes("your-cloudflare-worker")) {
+    configBanner.hidden = false;
+    configBanner.textContent =
+      "Configuration required: deploy the provided Cloudflare Worker, set OPENAI_API_KEY in the Worker dashboard, then update WORKER_URL in script.js to your worker URL.";
+    // re-add dismiss button text after setting content (if present)
+    if (dismissBannerBtn) {
+      // ensure it remains in the banner
+      configBanner.appendChild(dismissBannerBtn);
+    }
+    return false;
+  }
+
+  // Try a fast OPTIONS request to check reachability.
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 3000); // 3s timeout
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: "OPTIONS",
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    // If the worker responds (any 2xx/3xx/4xx) we consider it reachable.
+    if (res && res.ok) {
+      configBanner.hidden = true;
+      return true;
+    } else {
+      // worker responded but not ok (e.g., 404), still reachable — hide banner but warn in console
+      configBanner.hidden = true;
+      console.warn("Worker OPTIONS responded with status", res.status);
+      return true;
+    }
+  } catch (err) {
+    clearTimeout(timeout);
+    // network error or timeout — show banner with reachability hint
+    configBanner.hidden = false;
+    configBanner.textContent =
+      "Worker URL set but unreachable. Check deployment and network. See console for details.";
+    console.error("Worker reachability check failed:", err);
+    return false;
+  }
 }
+
+// Perform a health-check on load so the banner state is accurate immediately.
+updateConfigBanner();
 
 /* Utility: try to extract a simple name from the user's message */
 function tryExtractName(text) {
@@ -149,6 +202,14 @@ if (resetBtn) {
   });
 }
 
+/* Dismiss button handler: hide banner for this session */
+if (dismissBannerBtn) {
+  dismissBannerBtn.addEventListener("click", () => {
+    sessionStorage.setItem("configBannerDismissed", "1");
+    if (configBanner) configBanner.hidden = true;
+  });
+}
+
 /* Keyboard shortcut: Ctrl/Cmd+K focuses input (helps quick testing) */
 document.addEventListener("keydown", (e) => {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
@@ -190,13 +251,10 @@ chatForm.addEventListener("submit", async (e) => {
   try {
     const outbound = buildOutboundMessages();
 
-    if (WORKER_URL.includes("your-cloudflare-worker")) {
+    // Use the health-check before making the request to the worker.
+    const workerReady = await updateConfigBanner();
+    if (!workerReady) {
       typingEl.remove();
-      if (configBanner) {
-        configBanner.hidden = false;
-        configBanner.textContent =
-          "Configuration required: deploy the provided Cloudflare Worker, set OPENAI_API_KEY in the Worker dashboard, then update WORKER_URL in script.js to your worker URL.";
-      }
       appendMessage(
         "ai",
         "Configuration required: deploy the provided Cloudflare Worker, set OPENAI_API_KEY in the Worker dashboard, then update WORKER_URL in script.js to your worker URL."
@@ -241,5 +299,3 @@ chatForm.addEventListener("submit", async (e) => {
     userInput.focus();
   }
 });
-
-/* ...existing code... */

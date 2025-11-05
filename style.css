@@ -341,6 +341,7 @@ main {
 
 /* configuration banner shown when WORKER_URL is not set */
 .config-banner {
+  position: relative;
   margin: 12px auto 0;
   max-width: 900px;
   background: linear-gradient(
@@ -354,6 +355,23 @@ main {
   border-radius: 8px;
   font-size: 13px;
   text-align: center;
+}
+
+/* dismiss button inside the banner */
+.dismiss-btn {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: var(--accent-dark);
+  font-size: 12px;
+  padding: 6px 8px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+.dismiss-btn:hover {
+  background: rgba(10, 10, 10, 0.04);
 }
 
 /* smaller screens tweaks */
