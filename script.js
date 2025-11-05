@@ -61,8 +61,7 @@ const BASE_SYSTEM_PROMPT = `You are a helpful L'Oréal beauty assistant. Only an
 /* Cloudflare Worker URL (replace with your deployed worker URL) */
 const WORKER_URL = "https://your-cloudflare-worker.workers.dev"; // <-- set this to your deployed worker
 
-// Replace the old unconditional placeholder check with a health-check function.
-// The banner will be shown only if the URL is still the placeholder or unreachable.
+// Replace the old updateConfigBanner implementation with improved messaging
 async function updateConfigBanner() {
   if (!configBanner) return false;
 
@@ -75,17 +74,20 @@ async function updateConfigBanner() {
   // If still the placeholder, show a clear setup message.
   if (WORKER_URL.includes("your-cloudflare-worker")) {
     configBanner.hidden = false;
-    configBanner.textContent =
-      "Configuration required: deploy the provided Cloudflare Worker, set OPENAI_API_KEY in the Worker dashboard, then update WORKER_URL in script.js to your worker URL.";
-    // re-add dismiss button text after setting content (if present)
-    if (dismissBannerBtn) {
-      // ensure it remains in the banner
-      configBanner.appendChild(dismissBannerBtn);
-    }
+    // Provide concise steps and keep the dismiss button available
+    configBanner.innerHTML = `
+      <div>
+        <strong>Configuration required</strong>: deploy the Cloudflare Worker, add OPENAI_API_KEY under Variables & Secrets, then set <code>WORKER_URL</code> in <code>script.js</code>.
+        <div style="margin-top:6px;font-size:13px;color:#6b6b6b">
+          Tip: paste the worker URL exactly (https://your-worker.your-domain.workers.dev)
+        </div>
+      </div>
+    `;
+    if (dismissBannerBtn) configBanner.appendChild(dismissBannerBtn);
     return false;
   }
 
-  // Try a fast OPTIONS request to check reachability.
+  // Worker URL provided — test reachability with a short timeout.
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 3000); // 3s timeout
 
@@ -95,22 +97,49 @@ async function updateConfigBanner() {
       signal: controller.signal,
     });
     clearTimeout(timeout);
-    // If the worker responds (any 2xx/3xx/4xx) we consider it reachable.
-    if (res && res.ok) {
-      configBanner.hidden = true;
-      return true;
-    } else {
-      // worker responded but not ok (e.g., 404), still reachable — hide banner but warn in console
-      configBanner.hidden = true;
-      console.warn("Worker OPTIONS responded with status", res.status);
-      return true;
-    }
+
+    // If the worker responded at all, hide the banner.
+    configBanner.hidden = true;
+    return true;
   } catch (err) {
     clearTimeout(timeout);
-    // network error or timeout — show banner with reachability hint
-    configBanner.hidden = false;
-    configBanner.textContent =
-      "Worker URL set but unreachable. Check deployment and network. See console for details.";
+
+    // Network-level error (TypeError: Failed to fetch) often indicates DNS / offline / CORS blocking.
+    if (err && err.name === "AbortError") {
+      configBanner.hidden = false;
+      configBanner.innerHTML = `
+        <div>
+          <strong>Worker check timed out</strong>: the worker URL was not reachable within 3s.
+          Please confirm the worker is deployed and reachable, and that your network allows outbound requests.
+        </div>
+      `;
+    } else if (
+      err &&
+      err.message &&
+      err.message.toLowerCase().includes("failed to fetch")
+    ) {
+      configBanner.hidden = false;
+      configBanner.innerHTML = `
+        <div>
+          <strong>Network error</strong>: failed to contact the worker URL.
+          Possible causes: DNS not resolved, no internet connection, firewall, or CORS blocking the request.
+          Check the developer console for details.
+        </div>
+      `;
+    } else {
+      configBanner.hidden = false;
+      configBanner.innerHTML = `
+        <div>
+          <strong>Worker unreachable</strong>: an error occurred while checking the worker URL.
+          See console for details.
+        </div>
+      `;
+    }
+
+    // re-attach dismiss button if present
+    if (dismissBannerBtn) configBanner.appendChild(dismissBannerBtn);
+
+    // Log the detailed error for debugging
     console.error("Worker reachability check failed:", err);
     return false;
   }
@@ -286,13 +315,28 @@ chatForm.addEventListener("submit", async (e) => {
     conversationMessages.push({ role: "assistant", content: assistantText });
     saveConversation();
   } catch (err) {
+    // Remove typing indicator and show a helpful message
     try {
       typingEl.remove();
     } catch {}
-    appendMessage(
-      "ai",
-      "Error: Unable to get a response. Check console for details."
-    );
+
+    // Provide specific guidance for common network/fetch errors
+    if (
+      err &&
+      err.message &&
+      err.message.toLowerCase().includes("failed to fetch")
+    ) {
+      appendMessage(
+        "ai",
+        "Network error: Unable to reach the Cloudflare Worker. Check WORKER_URL, your internet connection, and Cloudflare deployment. See console for details."
+      );
+    } else {
+      appendMessage(
+        "ai",
+        "Error: Unable to get a response. Check console for details."
+      );
+    }
+
     console.error("Worker request error:", err);
   } finally {
     userInput.disabled = false;
