@@ -81,15 +81,30 @@ function tryExtractName(text) {
   return null;
 }
 
-/* Build messages array to send to the API: system prompt (personalized if we know the name)
-   followed by the full conversation history so the model has context. */
+/* New DOM refs for toolbar */
+const clearBtn = document.getElementById("clearBtn");
+const resetBtn = document.getElementById("resetBtn");
+
+/* Utility: render a small spinner element */
+function createSpinnerEl() {
+  const s = document.createElement("span");
+  s.className = "spinner";
+  s.setAttribute("aria-hidden", "true");
+  return s;
+}
+
+/* Limit history: use only the last N messages when sending to the API */
+const MAX_HISTORY_MESSAGES = 20;
+
 function buildOutboundMessages() {
   const systemPrompt = userName
     ? `${BASE_SYSTEM_PROMPT} The user's name is ${userName}.`
     : BASE_SYSTEM_PROMPT;
 
   // convert conversationMessages to the API shape (role/content)
-  const apiMessages = conversationMessages.map((m) => {
+  // keep only the most recent turns to avoid very long payloads
+  const trimmed = conversationMessages.slice(-MAX_HISTORY_MESSAGES);
+  const apiMessages = trimmed.map((m) => {
     const role = m.role === "assistant" ? "assistant" : "user";
     return { role, content: m.content };
   });
@@ -97,47 +112,86 @@ function buildOutboundMessages() {
   return [{ role: "system", content: systemPrompt }, ...apiMessages];
 }
 
-/* Initialize UI from saved history */
-loadConversation();
+/* Clear the conversation UI but keep greeting (for convenience) */
+function clearConversationUI() {
+  conversationMessages = [
+    { role: "assistant", content: "👋 Hello! How can I help you today?" },
+  ];
+  saveConversation();
+  chatWindow.textContent = "";
+  for (const msg of conversationMessages) {
+    appendMessage(msg.role === "assistant" ? "ai" : "user", msg.content);
+  }
+  latestQuestionEl.textContent = "";
+}
 
-/* When the user submits a question */
+/* Reset context: clears stored history and user name */
+function resetContext() {
+  conversationMessages = [];
+  userName = undefined;
+  localStorage.removeItem("loreal_chat_history");
+  localStorage.removeItem("loreal_userName");
+  clearConversationUI();
+}
+
+/* Wire toolbar buttons */
+if (clearBtn) {
+  clearBtn.addEventListener("click", () => {
+    clearConversationUI();
+    userInput.focus();
+  });
+}
+if (resetBtn) {
+  resetBtn.addEventListener("click", () => {
+    resetContext();
+    // show a small confirmation message in the chat
+    appendMessage("ai", "Context has been reset. How can I help you now?");
+  });
+}
+
+/* Keyboard shortcut: Ctrl/Cmd+K focuses input (helps quick testing) */
+document.addEventListener("keydown", (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+    e.preventDefault();
+    userInput.focus();
+  }
+});
+
+/* Update submit flow: use spinner element instead of plain "AI is typing…" text */
 chatForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const text = userInput.value.trim();
   if (!text) return;
 
-  // Show user's message in the chat and add to history
   appendMessage("user", text);
   conversationMessages.push({ role: "user", content: text });
   saveConversation();
 
-  // Display the user's latest question above the response (resets each new question)
   latestQuestionEl.textContent = `Latest question: ${text}`;
 
   userInput.value = "";
   userInput.disabled = true;
 
-  // Try to capture a simple name from the user's input and remember it
   const extracted = tryExtractName(text);
   if (extracted && !userName) {
     userName = extracted;
     localStorage.setItem("loreal_userName", userName);
   }
 
-  // Show a temporary "typing" indicator as an assistant message (visual only)
+  // spinner (visual) instead of plain text
   const typingEl = document.createElement("div");
   typingEl.className = "msg ai";
-  typingEl.textContent = "AI is typing…";
+  const spinner = createSpinnerEl();
+  typingEl.textContent = " AI is typing ";
+  typingEl.insertBefore(spinner, typingEl.firstChild);
   chatWindow.appendChild(typingEl);
   chatWindow.scrollTop = chatWindow.scrollHeight;
 
   try {
     const outbound = buildOutboundMessages();
 
-    // If WORKER_URL not configured, show friendly UI message and abort request
     if (WORKER_URL.includes("your-cloudflare-worker")) {
       typingEl.remove();
-      // also ensure banner is visible in case it wasn't
       if (configBanner) {
         configBanner.hidden = false;
         configBanner.textContent =
@@ -159,11 +213,8 @@ chatForm.addEventListener("submit", async (e) => {
     });
 
     const data = await response.json();
-
-    // Remove typing indicator
     typingEl.remove();
 
-    // Extract assistant text per instructions (data.choices[0].message.content)
     const assistantText =
       data &&
       data.choices &&
@@ -173,12 +224,10 @@ chatForm.addEventListener("submit", async (e) => {
         ? data.choices[0].message.content
         : "Sorry, I couldn't get a reply. Please try again.";
 
-    // Append assistant reply to history and UI
     appendMessage("ai", assistantText);
     conversationMessages.push({ role: "assistant", content: assistantText });
     saveConversation();
   } catch (err) {
-    // Remove typing indicator and show error
     try {
       typingEl.remove();
     } catch {}
@@ -192,3 +241,5 @@ chatForm.addEventListener("submit", async (e) => {
     userInput.focus();
   }
 });
+
+/* ...existing code... */

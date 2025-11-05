@@ -193,6 +193,43 @@ main {
   outline-offset: 2px;
 }
 
+/* chat toolbar (clear/reset) */
+.chat-toolbar {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+.toolbar-btn {
+  background: transparent;
+  border: 1px solid rgba(10, 10, 10, 0.08);
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--accent-dark);
+}
+.toolbar-btn:hover {
+  background: rgba(10, 10, 10, 0.02);
+}
+
+/* spinner used during AI reply */
+.spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(0, 0, 0, 0.12);
+  border-top-color: var(--accent-gold);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+  vertical-align: middle;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* latest question banner shown above each response */
 .latest-question {
   background: rgba(200, 161, 101, 0.06);

@@ -52,4 +52,13 @@ Notes:
 - Never expose your OpenAI API key in client-side code for production.
 - The worker must be deployed and the `OPENAI_API_KEY` secret configured for the chat to work from browsers.
 
+Notes on local testing controls
+
+- A small toolbar in the UI provides:
+  - Clear: clears the visible conversation (keeps greeting).
+  - Reset Context: deletes stored history and your saved name.
+- Keyboard shortcut: Ctrl/Cmd+K focuses the input box.
+- We limit outbound history to the last 20 messages to keep requests reasonable.
+- Remember: never commit real API keys. Use the Cloudflare Worker and its OPENAI_API_KEY secret in production.
+
 Enjoy building your L’Oréal beauty assistant! 💄
