@@ -3,8 +3,6 @@ const chatForm = document.getElementById("chatForm");
 const userInput = document.getElementById("userInput");
 const chatWindow = document.getElementById("chatWindow");
 const latestQuestionEl = document.getElementById("latestQuestion");
-// Add config banner element for WORKER_URL notices
-const configBanner = document.getElementById("configBanner");
 
 /* Conversation state persisted in localStorage to keep context across refreshes */
 let conversationMessages = []; // array of { role: 'user'|'assistant', content: '...' }
@@ -58,83 +56,6 @@ const BASE_SYSTEM_PROMPT = `You are a helpful L'Oréal beauty assistant. Only an
 
 /* Cloudflare Worker URL (replace with your deployed worker URL) */
 const WORKER_URL = "https://your-cloudflare-worker.workers.dev"; // <-- set this to your deployed worker
-
-// Replace the old updateConfigBanner implementation with improved messaging
-async function updateConfigBanner() {
-  if (!configBanner) return false;
-
-  // If still the placeholder, show a clear setup message.
-  if (WORKER_URL.includes("your-cloudflare-worker")) {
-    configBanner.hidden = false;
-    // Provide concise steps and keep the dismiss button available
-    configBanner.innerHTML = `
-      <div>
-        <strong>Configuration required</strong>: deploy the Cloudflare Worker, add OPENAI_API_KEY under Variables & Secrets, then set <code>WORKER_URL</code> in <code>script.js</code>.
-        <div style="margin-top:6px;font-size:13px;color:#6b6b6b">
-          Tip: paste the worker URL exactly (https://your-worker.your-domain.workers.dev)
-        </div>
-      </div>
-    `;
-    return false;
-  }
-
-  // Worker URL provided — test reachability with a short timeout.
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 3000); // 3s timeout
-
-  try {
-    const res = await fetch(WORKER_URL, {
-      method: "OPTIONS",
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-
-    // If the worker responded at all, hide the banner.
-    configBanner.hidden = true;
-    return true;
-  } catch (err) {
-    clearTimeout(timeout);
-
-    // Network-level error (TypeError: Failed to fetch) often indicates DNS / offline / CORS blocking.
-    if (err && err.name === "AbortError") {
-      configBanner.hidden = false;
-      configBanner.innerHTML = `
-        <div>
-          <strong>Worker check timed out</strong>: the worker URL was not reachable within 3s.
-          Please confirm the worker is deployed and reachable, and that your network allows outbound requests.
-        </div>
-      `;
-    } else if (
-      err &&
-      err.message &&
-      err.message.toLowerCase().includes("failed to fetch")
-    ) {
-      configBanner.hidden = false;
-      configBanner.innerHTML = `
-        <div>
-          <strong>Network error</strong>: failed to contact the worker URL.
-          Possible causes: DNS not resolved, no internet connection, firewall, or CORS blocking the request.
-          Check the developer console for details.
-        </div>
-      `;
-    } else {
-      configBanner.hidden = false;
-      configBanner.innerHTML = `
-        <div>
-          <strong>Worker unreachable</strong>: an error occurred while checking the worker URL.
-          See console for details.
-        </div>
-      `;
-    }
-
-    // Log the detailed error for debugging
-    console.error("Worker reachability check failed:", err);
-    return false;
-  }
-}
-
-// Perform a health-check on load so the banner state is accurate immediately.
-updateConfigBanner();
 
 /* Utility: try to extract a simple name from the user's message */
 function tryExtractName(text) {
@@ -227,7 +148,9 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-/* Update submit flow: use spinner element instead of plain "AI is typing…" text */
+/* Update submit flow: use spinner element and call OpenAI directly if a local key is provided.
+   Otherwise, if WORKER_URL is configured, forward to the worker. If neither is available,
+   show a brief neutral message in the chat. */
 chatForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const text = userInput.value.trim();
@@ -248,7 +171,7 @@ chatForm.addEventListener("submit", async (e) => {
     localStorage.setItem("loreal_userName", userName);
   }
 
-  // spinner (visual) instead of plain text
+  // spinner (visual)
   const typingEl = document.createElement("div");
   typingEl.className = "msg ai";
   const spinner = createSpinnerEl();
@@ -260,28 +183,50 @@ chatForm.addEventListener("submit", async (e) => {
   try {
     const outbound = buildOutboundMessages();
 
-    // Use the health-check before making the request to the worker.
-    const workerReady = await updateConfigBanner();
-    if (!workerReady) {
+    let data;
+
+    // If a local API key is present, call OpenAI directly (local testing)
+    if (window.OPENAI_API_KEY) {
+      const response = await fetch(
+        "https://api.openai.com/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${window.OPENAI_API_KEY}`,
+          },
+          body: JSON.stringify({
+            model: "gpt-4o",
+            messages: outbound,
+            max_tokens: 300,
+          }),
+        }
+      );
+      data = await response.json();
+    } else if (!WORKER_URL.includes("your-cloudflare-worker")) {
+      // Fallback: call the deployed Cloudflare Worker if WORKER_URL has been set
+      const response = await fetch(WORKER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: outbound }),
+      });
+      data = await response.json();
+    } else {
+      // Neither local key nor worker URL configured: inform user in-chat (no worker banner)
       typingEl.remove();
       appendMessage(
         "ai",
-        "Configuration required: deploy the provided Cloudflare Worker, set OPENAI_API_KEY in the Worker dashboard, then update WORKER_URL in script.js to your worker URL."
+        "No API key configured. For local testing set window.OPENAI_API_KEY in secrets.js or deploy a server to proxy requests."
       );
       userInput.disabled = false;
       userInput.focus();
       return;
     }
 
-    const response = await fetch(WORKER_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: outbound }),
-    });
-
-    const data = await response.json();
+    // Remove typing indicator
     typingEl.remove();
 
+    // Extract assistant text per instructions (data.choices[0].message.content)
     const assistantText =
       data &&
       data.choices &&
@@ -295,29 +240,15 @@ chatForm.addEventListener("submit", async (e) => {
     conversationMessages.push({ role: "assistant", content: assistantText });
     saveConversation();
   } catch (err) {
-    // Remove typing indicator and show a helpful message
     try {
       typingEl.remove();
     } catch {}
-
-    // Provide specific guidance for common network/fetch errors
-    if (
-      err &&
-      err.message &&
-      err.message.toLowerCase().includes("failed to fetch")
-    ) {
-      appendMessage(
-        "ai",
-        "Network error: Unable to reach the Cloudflare Worker. Check WORKER_URL, your internet connection, and Cloudflare deployment. See console for details."
-      );
-    } else {
-      appendMessage(
-        "ai",
-        "Error: Unable to get a response. Check console for details."
-      );
-    }
-
-    console.error("Worker request error:", err);
+    // Generic network/error message (avoid mentioning worker banner)
+    appendMessage(
+      "ai",
+      "Error: Unable to get a response. Check console for details."
+    );
+    console.error("Request error:", err);
   } finally {
     userInput.disabled = false;
     userInput.focus();
